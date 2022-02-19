@@ -7,14 +7,18 @@ const int trigPin = 9;
 // Piezo
 const int piezoPin[2] = {A0, A1};
 // Button
-const int buttonPin = 2;
-const int buttonLedPin = 3;
+const int buttonPin = 2; // Pin 10
+const int buttonLedPin = 3; // Pin 4
+
+//Button 2: Pin 6
+//Button 3: Pin 14
+//Button 4: Pin 15
 
 // Matrix
-// Output Pins
+// Output Pins => Change to use Interrupt Pins 18,19,20,21 then iterate ? 19,18,2,3
 const int PO_[4] = {22, 24, 49, 47};
 // Input Pins
-const int PI_[16] = {26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 53, 51};
+const int PI_[16] = {26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 53, 51}; // 52,50,48,46,44,42,40,38,36,34,32,30,28,26,24,22
 
 /***********************/
 /*        VARIABLES    */
@@ -136,7 +140,6 @@ void CheckMissed()
   // Read both piezos
   for (int i = 0; i < 2; i++)
   {
-    iValue[i] = analogRead(piezoPin[i]);
     iValue[i] = analogRead(piezoPin[i]);
 
     if (iValue[i] >= iPiezoThreshold)

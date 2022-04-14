@@ -1,3 +1,22 @@
+#include <PinChangeInterrupt.h>
+#include <Adafruit_NeoPixel.h>
+
+#ifdef __AVR__
+ #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
+#endif
+
+#define LED_PIN     12
+
+// How many NeoPixels are attached to the Arduino?
+#define LED_COUNT  35
+
+// NeoPixel brightness, 0 (min) to 255 (max)
+#define BRIGHTNESS 150 // Set BRIGHTNESS to about 1/5 (max = 255)
+
+// Declare our NeoPixel strip object:
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
+
+
 /***********************/
 /*        PINS         */
 /***********************/
@@ -8,17 +27,17 @@ const int trigPin = 9;
 const int piezoPin[2] = {A0, A1};
 // Button
 const int buttonPin = 10; // Pin 10 (2)
-const int buttonLedPin = 4; // Pin 4 (3)
+const int buttonLedPin = 7; // Pin 4 (3)
 
-//Button 2: Pin 6
-//Button 3: Pin 14
-//Button 4: Pin 15
+//Button 2: Pin 6   Led: 4
+//Button 3: Pin 14  Led: 44
+//Button 4: Pin 15  Led: 45
 
 // Matrix
 // Output Pins => Change to use Interrupt Pins 19,18,2,3 (22, 24, 49, 47) then iterate ? 
 const int PO_[4] = {19,18,2,3};
 // Input Pins
-const int PI_[16] = {52,50,48,46,44,42,40,38,36,34,32,30,28,26,24,22}; // (26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 53, 51)
+const int PI_[16] = {52,50,48,53,51,42,40,38,36,34,32,30,28,26,24,22}; // (26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 53, 51)
 
 /***********************/
 /*        VARIABLES    */
@@ -86,12 +105,14 @@ int ReadUltrasonicDistance()
 
 void CheckButton()
 {
-  iButtonState = digitalRead(buttonPin);
+  // iButtonState = digitalRead(buttonPin);
   // Wenn gedrückt Ausgabe
-  if (iButtonState == LOW)
+  if (iButtonState == 1)
   {
+    ResetMotion();
     Serial.println("b");
     delay(500);
+    iButtonState = 0;
   }
 }
 
@@ -387,14 +408,27 @@ void EvalNextPlayer()
   }
 }
 
+void triggerButton() 
+{
+  iButtonState = 1;
+}
+
 /* Setup loop */
 void setup()
 {
+  // LED Strip
+  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.show();            // Turn OFF all pixels ASAP
+  strip.setBrightness(BRIGHTNESS);
+  strip.fill(strip.Color(0, 0, 0, 255));
+  strip.show();
   // Pins Ultrasonic
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   // Pin Button
   pinMode(buttonPin, INPUT_PULLUP);
+  //attachInterrupt(digitalPinToInterrupt(buttonPin), triggerButton, CHANGE);
+  attachPCINT(digitalPinToPCINT(buttonPin), triggerButton, CHANGE);
   // Pin Button LED
   pinMode(buttonLedPin, OUTPUT);
   digitalWrite(buttonLedPin, LOW);
@@ -410,7 +444,8 @@ void setup()
   }
 
   // Button blink 5 times
-  Blink(5);
+  // Blink(5);
+
   // Start serial
   Serial.begin(9600);
 }

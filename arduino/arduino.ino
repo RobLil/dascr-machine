@@ -97,8 +97,8 @@ int ReadUltrasonicDistance()
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  lDuration = pulseIn(echoPin, HIGH);
-  iDistance = lDuration * 0.034 / 2;
+  lDuration = pulseIn(echoPin, HIGH, 500);
+  iDistance = round (lDuration / 58);
 
   return iDistance;
 }
@@ -221,6 +221,7 @@ void BlinkExtraSlow(int times)
 
 void SetUltrasonicThreshold()
 {
+  delay(iDebounceWobbleTime);
   int iTempDistance = ReadUltrasonicDistance();
   iUltrasonicThreshold = iTempDistance + 3;
   iUltrasonicThresholdMeasured = 1;

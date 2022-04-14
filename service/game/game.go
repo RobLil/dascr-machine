@@ -95,6 +95,9 @@ func (g *Game) processCommand(cmd string) {
 					// Write timeout and let the machine blink
 					time.Sleep(g.WaitingTime)
 				}
+				// Write 4 to serial to reset ultrasonic loop at Arduino
+				g.Serial.Write("s,4")
+				// Then send next player
 				g.Sender.NextPlayer()
 				// Setting the time after nextPlayer to debounce multiple "u"'s
 				g.NextPlayerTime = time.Now()

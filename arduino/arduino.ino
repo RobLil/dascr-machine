@@ -109,7 +109,6 @@ void CheckButton()
   // Wenn gedrückt Ausgabe
   if (iButtonState == 1)
   {
-    ResetMotion();
     Serial.println("b");
     delay(500);
     iButtonState = 0;

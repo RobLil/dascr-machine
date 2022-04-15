@@ -11,7 +11,7 @@
 #define LED_COUNT  35
 
 // NeoPixel brightness, 0 (min) to 255 (max)
-#define BRIGHTNESS 150 // Set BRIGHTNESS to about 1/5 (max = 255)
+#define BRIGHTNESS 230 // Set BRIGHTNESS to about 1/5 (max = 255)
 
 // Declare our NeoPixel strip object:
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
@@ -20,9 +20,8 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
 /***********************/
 /*        PINS         */
 /***********************/
-// Ultrasonic
-const int echoPin = 8;
-const int trigPin = 9;
+// PIR Sensor
+const int pirPin = 8;
 // Piezo
 const int piezoPin[2] = {A0, A1};
 // Button
@@ -60,12 +59,10 @@ int iPiezoThreshold = 20;
 bool bMissedDart = false;
 // Button
 int iButtonState = 0;
-// Ultrasonic
+// PIR
 long lDuration;
-int iDistance;
-int iUltrasonicThreshold = 0;
+int iPIRState = 0;
 int iMotionDetected = 0;
-int iUltrasonicThresholdMeasured = 0;
 int iDebounceWobbleTime = 750;
 // Input String from Raspberry Pi to Arduino
 const byte numChars = 32;
@@ -90,18 +87,6 @@ int iState = 0;
 /***********************/
 /*       Functions     */
 /***********************/
-int ReadUltrasonicDistance()
-{
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  lDuration = pulseIn(echoPin, HIGH);
-  iDistance = lDuration * 0.034 / 2;
-
-  return iDistance;
-}
 
 void CheckButton()
 {
@@ -219,20 +204,10 @@ void BlinkExtraSlow(int times)
   }
 }
 
-void SetUltrasonicThreshold()
+void checkPIR()
 {
-  delay(iDebounceWobbleTime * 2);
-  int iTempDistance = ReadUltrasonicDistance();
-  iUltrasonicThreshold = iTempDistance + 3;
-  iUltrasonicThresholdMeasured = 1;
-  // Debounce cause otherwise wobbeling dart might directly trigger movement
-  delay(iDebounceWobbleTime);
-}
-
-void ProcessUltrasonic()
-{
-  ReadUltrasonicDistance();
-  if (iDistance > iUltrasonicThreshold)
+  iPIRState = digitalRead(pirPin);
+  if (iPIRState)
   {
     Serial.println("u");
   }
@@ -245,7 +220,7 @@ void SetMotion()
 
 void ResetMotion()
 {
-  iUltrasonicThresholdMeasured = 0;
+  iPIRState = 0;
   iMotionDetected = 0;
 }
 
@@ -335,6 +310,8 @@ void ProcessSerial()
       case 1:
         // THROW
         ButtonOff();
+        // clear if button pressed after motiondetection
+        iButtonState = 0;
         break;
       case 2:
         // NEXTPLAYER
@@ -379,13 +356,13 @@ void ProcessSerial()
 
 void DetectMotion()
 {
-  // Button Overwrites Motion detection
-  CheckButton();
   // If there is no motion process ultrasonic
   switch (iMotionDetected)
   {
   case 0:
-    ProcessUltrasonic();
+    // Button Overwrites Motion detection
+    CheckButton();
+    checkPIR();
     break;
   default:
     break;
@@ -394,11 +371,12 @@ void DetectMotion()
 
 void EvalNextPlayer()
 {
-  switch (iUltrasonicThresholdMeasured)
+  switch (digitalRead(buttonLedPin))
   {
   case 0:
     ButtonOn();
-    SetUltrasonicThreshold();
+    // wait before checking PIR
+    delay(iDebounceWobbleTime);
     break;
   case 1:
     DetectMotion();
@@ -422,9 +400,8 @@ void setup()
   strip.setBrightness(BRIGHTNESS);
   strip.fill(strip.Color(0, 0, 0, 255));
   strip.show();
-  // Pins Ultrasonic
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  // Pins PIR-Sensor
+  pinMode(pirPin, INPUT);
   // Pin Button
   pinMode(buttonPin, INPUT_PULLUP);
   //attachInterrupt(digitalPinToInterrupt(buttonPin), triggerButton, CHANGE);
